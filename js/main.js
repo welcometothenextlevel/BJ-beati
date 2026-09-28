@@ -8,18 +8,36 @@
   window.addEventListener('load', function () { doc.classList.add('is-loaded'); });
   setTimeout(function () { doc.classList.add('is-loaded'); }, 1200);
 
-  /* header state + mobile call bar */
+  /* header state + mobile call bar (hidden while scrolling up, when Safari's toolbar expands) */
+  var lastY = window.scrollY || 0;
   function onScroll() {
     var y = window.scrollY || window.pageYOffset;
     if (header) header.classList.toggle('is-scrolled', y > 24);
     if (callbar) {
+      var goingDown = y > lastY + 2, goingUp = y < lastY - 2;
       var devis = document.getElementById('devis');
-      var nearForm = devis && devis.getBoundingClientRect().top < window.innerHeight * .6 && devis.getBoundingClientRect().bottom > 0;
-      callbar.classList.toggle('is-visible', y > window.innerHeight * .8 && !nearForm);
+      var foot = document.querySelector('.site-footer');
+      var vh = window.innerHeight;
+      var nearForm = devis && devis.getBoundingClientRect().top < vh * .7 && devis.getBoundingClientRect().bottom > 0;
+      var nearFoot = foot && foot.getBoundingClientRect().top < vh;
+      var allowed = y > vh * .7 && !nearForm && !nearFoot;
+      if (!allowed || goingUp) callbar.classList.remove('is-visible');
+      else if (goingDown) callbar.classList.add('is-visible');
     }
+    lastY = y;
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+
+  /* back to top */
+  document.querySelectorAll('[data-to-top]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      if (history.replaceState) history.replaceState(null, '', location.pathname + location.search);
+    });
+  });
 
   /* mobile menu */
   var toggle = document.querySelector('.menu-toggle');
